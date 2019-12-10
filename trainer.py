@@ -13,7 +13,7 @@ from memory import ReplayMemory
 
 
 class Trainer:
-    def __init__(self, game, args):
+    def __init__(self, game, goal, measurement, args):
         self.game = game
         self.args = args
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -23,11 +23,11 @@ class Trainer:
 
         measurement_size = 3 # [ ammo count, health level, frag count ]
         self.timesteps = [1, 2, 4, 8, 16, 32]
-        goal_size = measurement_size * len(self.timesteps)
-        self.goal = torch.tensor([0, 1.0, 0] * len(self.timesteps)).to(self.device)
 
-        health = self.game.get_state().game_variables[0]
-        self.measurement = torch.tensor([0, health / 30.0, 0]).to(self.device)
+        self.goal = torch.FloatTensor(goal * len(self.timesteps)).to(self.device)
+
+        measurement = np.divide(measurement, [7.5, 30., 1.])
+        self.measurement = torch.FloatTensor(measurement).to(self.device)
 
         self.model = Model().to(self.device)
         self.criterion = nn.MSELoss()
@@ -118,7 +118,7 @@ class Trainer:
         if random() <= self.find_eps(epoch):
             a = torch.tensor(randint(0, len(self.actions) - 1)).long()
         else:
-            a = self.get_best_action(s1, self.measurement, self.goal)
+            a = self.get_best_action(s1)
             
         reward = self.game.make_action(self.actions[a], 12)
         

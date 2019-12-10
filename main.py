@@ -6,7 +6,11 @@ from vizdoom import DoomGame
 from utils import game_state
 from trainer import Trainer
 
+
 D1_CFG_PATH = "./scenarios/health_gathering.cfg"
+D2_CFG_PATH = "./scenarios/..."
+D3_CFG_PATH = "./scenarios/..."
+
 
 def initialize_vizdoom(config):
     game = DoomGame()
@@ -19,7 +23,11 @@ def initialize_vizdoom(config):
 def d1_mode(args):
     game = initialize_vizdoom(D1_CFG_PATH)
 
-    trainer = Trainer(game, args)
+    goal = [0, 1, 0]
+    health = game.get_state().game_variables[0]
+    measurement = [0, health, 0]
+
+    trainer = Trainer(game, goal, measurement, args)
 
     img = game_state(game)
     state = img.expand(4, -1, -1)
@@ -29,6 +37,14 @@ def d1_mode(args):
     game.close()
 
     print(np.array(health_log_test).mean())
+
+
+def d2_mode(args):
+    pass
+
+
+def d3_mode(args):
+    pass
 
 
 def main():
@@ -43,6 +59,10 @@ def main():
 
     if args.game_mode == "D1":
         d1_mode(args)
+    elif args.game_mode == "D2":
+        d2_mode(args)
+    elif args.game_mode == "D3":
+        d3_mode(args)
 
 
 if __name__ == "__main__":
