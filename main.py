@@ -3,13 +3,13 @@ import numpy as np
 
 from vizdoom import DoomGame
 
-from utils import game_state
 from trainer import Trainer
+from utils import game_state
 
 
 D1_CFG_PATH = "./scenarios/health_gathering.cfg"
-D2_CFG_PATH = "./scenarios/..."
-D3_CFG_PATH = "./scenarios/..."
+D2_CFG_PATH = "./scenarios/health_gathering_supreme.cfg"
+D3_CFG_PATH = "./scenarios/battle.cfg"
 
 
 def initialize_vizdoom(config):
@@ -29,22 +29,48 @@ def d1_mode(args):
 
     trainer = Trainer(game, goal, measurement, args)
 
-    img = game_state(game)
-    state = img.expand(4, -1, -1)
+    state = game_state(game).expand(4, -1, -1)
 
-    loss_log, reward_log, health_log, timeout_log, reward_log_test, health_log_test, timeout_log_test = trainer.train(state)
+    trainer.train(state)
 
     game.close()
 
-    print(np.array(health_log_test).mean())
+    # trainer.watch_test_episodes()
+
 
 
 def d2_mode(args):
-    pass
+    game = initialize_vizdoom(D2_CFG_PATH)
+
+    goal = [0, 1, 0]
+    health = game.get_state().game_variables[0]
+    measurement = [0, health, 0]
+
+    trainer = Trainer(game, goal, measurement, args)
+
+    state = game_state(game).expand(4, -1, -1)
+
+    trainer.train(state)
+
+    game.close()
 
 
 def d3_mode(args):
-    pass
+    game = initialize_vizdoom(D3_CFG_PATH)
+
+    goal = [0.5, 0.5, 1]
+    ammo = game.get_state().game_variables[0]
+    health = game.get_state().game_variables[1]
+    frag = game.get_state().game_variables[2]
+    measurement = [ammo, health, frag]
+
+    trainer = Trainer(game, goal, measurement, args)
+
+    state = game_state(game).expand(4, -1, -1)
+
+    trainer.train(state)
+
+    game.close()
 
 
 def main():
@@ -54,7 +80,7 @@ def main():
     parser.add_argument("--lr", default=1e-3, type=int)    
     parser.add_argument("--steps", default=525, type=int)
     parser.add_argument("--epochs", default=5, type=int)
-    parser.add_argument("--test-episods", default=2, type=int)
+    parser.add_argument("--test-episodes", default=2, type=int)
     args = parser.parse_args()
 
     if args.game_mode == "D1":
@@ -63,6 +89,8 @@ def main():
         d2_mode(args)
     elif args.game_mode == "D3":
         d3_mode(args)
+    else:
+        raise Exception("game-mode must be D1, D2 or D3")
 
 
 if __name__ == "__main__":

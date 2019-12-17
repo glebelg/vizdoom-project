@@ -4,12 +4,14 @@ import torch.nn as nn
 import itertools
 import numpy as np
 
-from tqdm import tqdm
+from time import sleep
+from vizdoom import Mode
+from tqdm import tqdm, trange
 from random import random, randint
 
 from model import Model
-from utils import game_state
 from memory import ReplayMemory
+from utils import game_state, save_data, save_model
 
 
 class Trainer:
@@ -27,7 +29,7 @@ class Trainer:
         self.goal = torch.FloatTensor(goal * len(self.timesteps)).to(self.device)
 
         measurement = np.divide(measurement, [7.5, 30., 1.])
-        self.measurement = torch.FloatTensor(measurement).to(self.device)
+        self.measurement = torch.from_numpy(measurement).to(self.device)
 
         self.model = Model().to(self.device)
         self.criterion = nn.MSELoss()
@@ -125,15 +127,21 @@ class Trainer:
         if self.game.is_episode_finished():
             isterminal, s2 = 1., None
             
+            ammo = self.measurement[0]
             health = self.measurement[1]
+            frag = self.measurement[2]
+
         else:
             isterminal = 0.
             img2 = game_state(self.game).to(self.device)
             s2 = torch.cat([s1[:3], img2])
         
-            health = self.game.get_state().game_variables[0]
+            ammo = self.game.get_state().game_variables[0]
+            health = self.game.get_state().game_variables[1]
+            frag = self.game.get_state().game_variables[2]
             
-        self.measurement = torch.tensor([0, health / 30.0, 0]).to(self.device)   
+        measurement = np.divide([ammo, health, frag], [7.5, 30., 1.]).astype(np.float32)
+        self.measurement = torch.from_numpy(measurement).to(self.device)   
         self.memory.add_transition(s1, a, s2, self.measurement, isterminal, reward)
             
         loss = self.train_minibatch()
@@ -149,7 +157,7 @@ class Trainer:
         img = game_state(self.game)
         state = img.expand(4, -1, -1).to(self.device)
         
-        for _ in range(self.args.test_episods):
+        for _ in trange(self.args.test_episodes):
             self.game.new_episode()
             while not self.game.is_episode_finished():
                 h = self.game.get_state().game_variables[0]
@@ -161,9 +169,9 @@ class Trainer:
                 self.game.make_action(self.actions[a_idx], 12)
                 
             r = self.game.get_total_reward()
-            reward_log.append(r)
-            scores = np.append(scores, r)
-            timeout_log.append(self.game.get_episode_timeout())
+            reward_log.append(r) # make file
+            scores = np.append(scores, r) # make file
+            timeout_log.append(self.game.get_episode_timeout()) # make file
             
             health_log.append(h)
                 
@@ -171,32 +179,35 @@ class Trainer:
 
 
     def train(self, state):
-        loss_log, reward_log, health_log, timeout_log = [], [], [], []
+        loss_log, total_reward_log, health_log, timeout_log = [], [], [], []
         reward_log_test, health_log_test, timeout_log_test = [], [], []
         
-        for epoch in tqdm(range(self.args.epochs)):
-            
+        for epoch in range(self.args.epochs):
+            print("Epoch {}/{}".format(epoch + 1, self.args.epochs))
+            print("Training...")
+
             episodes_finished = 0
             scores = np.array([])
             self.game.new_episode()
             
-            for learning_step in tqdm(range(self.args.steps)):
+            for learning_step in trange(self.args.steps):
                 loss = self.perform_learning_step(epoch, state)
                 
-                health_log.append(self.measurement)
-                
+                health_log.append(self.measurement) # make file
+
                 if loss is not None:
-                    loss_log.append(loss) 
+                    loss_log.append(loss) # make file 
                 
                 if self.game.is_episode_finished():
-                    score = self.game.get_total_reward()
-                    reward_log.append(score)
+                    total_reward_log.append(self.game.get_total_reward())
                     
-                    scores = np.append(scores, score)
                     self.game.new_episode()
                     episodes_finished += 1
                     
                     timeout_log.append(self.game.get_episode_timeout())
+
+            save_data(total_reward_log, "train_total_reward", self.args)
+
                     
             print("Completed {} episodes".format(episodes_finished))
             print("Testing...")
@@ -206,6 +217,32 @@ class Trainer:
             health_log_test.append(health_log_test_)
             timeout_log_test.append(timeout_log_test_)
             
-            # torch.save(self.model, "model-doom.pth")
+            # save_model(self.model)
 
-        return loss_log, reward_log, health_log, timeout_log, reward_log_test, health_log_test, timeout_log_test
+
+    def watch_test_episodes(self):
+        self.game.set_window_visible(False)
+        self.game.set_mode(Mode.ASYNC_PLAYER)
+        self.game.init()
+        for episode in range(1):
+            self.game.new_episode("episode-%d" % episode)
+
+            img = game_state(self.game).to(self.device)
+            state = img.expand(4, -1, -1)
+
+            while not self.game.is_episode_finished():
+                img = game_state(self.game).to(self.device)
+                state = torch.cat([state[:3], img]).to(self.device)
+
+                # state = game_state(self.game)
+                # state = state.reshape([1, 1, 84, 84])
+
+                a_idx = self.get_best_action(state)
+                self.game.set_action(self.actions[a_idx])
+
+                for _ in range(12):
+                    self.game.advance_action()
+
+            sleep(0.02)
+            score = self.game.get_total_reward()
+            print("Total score:", score)
