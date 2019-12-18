@@ -11,7 +11,8 @@ from random import random, randint
 
 from model import Model
 from memory import ReplayMemory
-from utils import game_state, save_data, save_model
+from logsKeeper import LogsKeeper
+from utils import game_state, save_model
 
 
 class Trainer:
@@ -36,6 +37,7 @@ class Trainer:
         self.optimizer = torch.optim.SGD(self.model.parameters(), self.args.lr)
 
         self.memory = ReplayMemory()
+        self.logsKeeper = LogsKeeper(self.args)
 
 
     def get_best_action(self, state):
@@ -185,47 +187,38 @@ class Trainer:
             
             health_log.append(h)
                 
-        return reward_log, health_log, timeout_log
-
 
     def train(self, state):
-        loss_log, total_reward_log, health_log, timeout_log = [], [], [], []
-        reward_log_test, health_log_test, timeout_log_test = [], [], []
         
         for epoch in range(self.args.epochs):
             print("Epoch {}/{}".format(epoch + 1, self.args.epochs))
             print("Training...")
 
             episodes_finished = 0
-            scores = np.array([])
             self.game.new_episode()
             
             for learning_step in trange(self.args.steps):
                 loss = self.perform_learning_step(epoch, state)
                 
-                health_log.append(self.measurement) # make file
+                self.logsKeeper.save_measurement(self.measurement, "train_measurement")
 
-                if loss is not None:
-                    loss_log.append(loss) # make file 
+                
+                # if loss is not None:
+                    # loss_log.append(loss) # make file 
                 
                 if self.game.is_episode_finished():
-                    total_reward_log.append(self.game.get_total_reward())
-                    
+                    self.logsKeeper.save_val(self.game.get_total_reward(), "train_total_reward")
+
                     self.game.new_episode()
                     episodes_finished += 1
                     
-                    timeout_log.append(self.game.get_episode_timeout())
 
-            save_data(total_reward_log, "train_total_reward", self.args)
+            self.logsKeeper.save_val(episodes_finished, "train_episodes_finished")
 
                     
             print("Completed {} episodes".format(episodes_finished))
             print("Testing...")
-            reward_log_test_, health_log_test_, timeout_log_test_ = self.test()
-            
-            reward_log_test.append(reward_log_test_)
-            health_log_test.append(health_log_test_)
-            timeout_log_test.append(timeout_log_test_)
+            self.test()
             
             # save_model(self.model)
 
