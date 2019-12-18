@@ -71,10 +71,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--game-mode", default="D1", type=str)
     parser.add_argument("--batch-size", default=64, type=int)
-    parser.add_argument("--lr", default=1e-3, type=int)    
-    parser.add_argument("--steps", default=525, type=int)
-    parser.add_argument("--epochs", default=5, type=int)
-    parser.add_argument("--test-episodes", default=2, type=int)
+    parser.add_argument("--iterations", default=800, type=int)
+    parser.add_argument("--epochs", default=10, type=int)
+    parser.add_argument("--test-episodes", default=80, type=int)
     args = parser.parse_args()
 
     if args.game_mode == "D1":

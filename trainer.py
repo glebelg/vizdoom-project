@@ -15,6 +15,8 @@ from logsKeeper import LogsKeeper
 from utils import game_state, save_model
 
 
+STOP_EPISODE = 525
+
 class Trainer:
     def __init__(self, game, goal, measurement, args):
         self.game = game
@@ -34,7 +36,7 @@ class Trainer:
 
         self.model = Model().to(self.device)
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.SGD(self.model.parameters(), self.args.lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4, betas=(0.95, 0.999), eps=1e-4)
 
         self.memory = ReplayMemory()
         self.logsKeeper = LogsKeeper(self.args)
@@ -201,13 +203,15 @@ class Trainer:
 
             episodes_finished = 0
             self.game.new_episode()
+            cut_step = 0
 
             health = [self.game.get_state().game_variables[int(self.args.game_mode == "D3")]]
             if self.args.game_mode == "D3":
                 frags = [self.game.get_state().game_variables[2]]
     
-            for learning_step in trange(self.args.steps):
+            for learning_step in trange(self.args.iterations):
                 loss = self.perform_learning_step(epoch, state)
+                cut_step += 1
 
                 health.append(self.measurement[1].item() * 30)
 
@@ -215,7 +219,7 @@ class Trainer:
                 if loss is not None:
                     self.logsKeeper.save_val(loss, "train_loss")
                 
-                if self.game.is_episode_finished():
+                if self.game.is_episode_finished() or cut_step == STOP_EPISODE:
                     self.logsKeeper.save_val(self.game.get_total_reward(), "train_total_reward")
                     self.logsKeeper.save_val(loss, "train_episode_loss")
                     self.logsKeeper.save_val(self.measurement[2].item(), "train_frags")
@@ -227,6 +231,7 @@ class Trainer:
                     self.game.new_episode()
                     episodes_finished += 1
                     health = []
+                    cut_step = 0
                     
             self.logsKeeper.save_val(episodes_finished, "train_episodes_finished")
             if self.args.game_mode == "D3":
