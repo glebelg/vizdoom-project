@@ -127,18 +127,28 @@ class Trainer:
         if self.game.is_episode_finished():
             isterminal, s2 = 1., None
             
-            ammo = self.measurement[0]
-            health = self.measurement[1]
-            frag = self.measurement[2]
+            if self.args.game_mode == "D3":
+                ammo = self.measurement[0]
+                health = self.measurement[1]
+                frag = self.measurement[2]
+            else:
+                ammo = 0
+                health = self.measurement[0]
+                frag = 0
 
         else:
             isterminal = 0.
             img2 = game_state(self.game).to(self.device)
             s2 = torch.cat([s1[:3], img2])
-        
-            ammo = self.game.get_state().game_variables[0]
-            health = self.game.get_state().game_variables[1]
-            frag = self.game.get_state().game_variables[2]
+
+            if self.args.game_mode == "D3":
+                ammo = self.game.get_state().game_variables[0]
+                health = self.game.get_state().game_variables[1]
+                frag = self.game.get_state().game_variables[2]
+            else:
+                ammo = 0
+                health = self.game.get_state().game_variables[0]
+                frag = 0
             
         measurement = np.divide([ammo, health, frag], [7.5, 30., 1.]).astype(np.float32)
         self.measurement = torch.from_numpy(measurement).to(self.device)   
@@ -233,9 +243,6 @@ class Trainer:
             while not self.game.is_episode_finished():
                 img = game_state(self.game).to(self.device)
                 state = torch.cat([state[:3], img]).to(self.device)
-
-                # state = game_state(self.game)
-                # state = state.reshape([1, 1, 84, 84])
 
                 a_idx = self.get_best_action(state)
                 self.game.set_action(self.actions[a_idx])
