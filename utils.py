@@ -15,5 +15,8 @@ def game_state(game):
 
     
 def save_model(model):
+    if not os.path.isdir("./saved_models/"):
+            os.mkdir("./saved_models/")
+
     model_path = "./saved_models/model-doom_{}.pth".format(self.args.game_mode)
     torch.save(model, model_path)

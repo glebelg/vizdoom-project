@@ -162,60 +162,76 @@ class Trainer:
 
 
     def test(self):
-        scores = np.array([])
-        loss_log, reward_log, health_log, timeout_log = [], [], [], []
+        health, total_reward, frags = [], [], []
 
-        
         img = game_state(self.game)
         state = img.expand(4, -1, -1).to(self.device)
         
         for _ in trange(self.args.test_episodes):
             self.game.new_episode()
+
+            cur_health = []
+
             while not self.game.is_episode_finished():
-                h = self.game.get_state().game_variables[0]
+                cur_health.append(self.game.get_state().game_variables[int(self.args.game_mode == "D3")])
+                if self.args.game_mode == "D3":
+                    frag = self.game.get_state().game_variables[2]
+
                 img = game_state(self.game).to(self.device)
                 state = torch.cat([state[:3], img])
                 
                 a_idx = self.get_best_action(state)
-                
                 self.game.make_action(self.actions[a_idx], 12)
-                
-            r = self.game.get_total_reward()
-            reward_log.append(r) # make file
-            scores = np.append(scores, r) # make file
-            timeout_log.append(self.game.get_episode_timeout()) # make file
-            
-            health_log.append(h)
-                
+
+            health.append(np.array(cur_health).mean())
+            total_reward.append(self.game.get_total_reward())
+            if self.args.game_mode == "D3":
+                frags.append(frag)
+
+        self.logsKeeper.save_val(np.array(total_reward).mean(), "test_total_reward")
+        self.logsKeeper.save_val(np.array(health).mean(), "test_average_health")
+        if self.args.game_mode == "D3":
+            self.logsKeeper.save_val(np.array(frags).mean(), "test_frags")
+
 
     def train(self, state):
-        
         for epoch in range(self.args.epochs):
             print("Epoch {}/{}".format(epoch + 1, self.args.epochs))
             print("Training...")
 
             episodes_finished = 0
             self.game.new_episode()
-            
+
+            health = [self.game.get_state().game_variables[int(self.args.game_mode == "D3")]]
+            if self.args.game_mode == "D3":
+                frags = [self.game.get_state().game_variables[2]]
+    
             for learning_step in trange(self.args.steps):
                 loss = self.perform_learning_step(epoch, state)
-                
-                self.logsKeeper.save_measurement(self.measurement, "train_measurement")
 
-                
-                # if loss is not None:
-                    # loss_log.append(loss) # make file 
+                health.append(self.measurement[1].item() * 30)
+
+                self.logsKeeper.save_measurement(self.measurement, "train_measurement")
+                if loss is not None:
+                    self.logsKeeper.save_val(loss, "train_loss")
                 
                 if self.game.is_episode_finished():
                     self.logsKeeper.save_val(self.game.get_total_reward(), "train_total_reward")
+                    self.logsKeeper.save_val(loss, "train_episode_loss")
+                    self.logsKeeper.save_val(self.measurement[2].item(), "train_frags")
+                    self.logsKeeper.save_val(np.array(health).mean(), "train_average_health")
+
+                    if self.args.game_mode == "D3":
+                        frags.append(self.measurement[2].item())
 
                     self.game.new_episode()
                     episodes_finished += 1
+                    health = []
                     
-
             self.logsKeeper.save_val(episodes_finished, "train_episodes_finished")
+            if self.args.game_mode == "D3":
+                self.logsKeeper.save_val(np.array(frags).mean(), "train_average_frags")
 
-                    
             print("Completed {} episodes".format(episodes_finished))
             print("Testing...")
             self.test()

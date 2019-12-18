@@ -16,7 +16,17 @@ class LogsKeeper:
         self._clear_logs()
 
     def _clear_logs(self):
-        log_files = ["train_total_reward", "train_episodes_finished", "train_measurement"]
+        log_files = ["train_total_reward",
+                     "train_episodes_finished",
+                     "train_measurement",
+                     "train_loss",
+                     "train_episode_loss",
+                     "train_frags",
+                     "train_average_health",
+                     "train_average_frags",
+                     "test_total_reward",
+                     "test_frags",
+                     "test_average_health"]
 
         for file in log_files:
             file = "{}-batchSize_{}-epochs_{}-steps-{}-testEpisodes_{}.log".format(file, *self.name_args)

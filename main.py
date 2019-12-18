@@ -22,15 +22,13 @@ def initialize_vizdoom(config):
 
 def d1_mode(args):
     game = initialize_vizdoom(D1_CFG_PATH)
+    state = game_state(game).expand(4, -1, -1)
 
     goal = [0, 1, 0]
     health = game.get_state().game_variables[0]
     measurement = [0, health, 0]
 
     trainer = Trainer(game, goal, measurement, args)
-
-    state = game_state(game).expand(4, -1, -1)
-
     trainer.train(state)
 
     game.close()
@@ -41,15 +39,13 @@ def d1_mode(args):
 
 def d2_mode(args):
     game = initialize_vizdoom(D2_CFG_PATH)
+    state = game_state(game).expand(4, -1, -1)
 
     goal = [0, 1, 0]
     health = game.get_state().game_variables[0]
     measurement = [0, health, 0]
 
     trainer = Trainer(game, goal, measurement, args)
-
-    state = game_state(game).expand(4, -1, -1)
-
     trainer.train(state)
 
     game.close()
@@ -57,6 +53,7 @@ def d2_mode(args):
 
 def d3_mode(args):
     game = initialize_vizdoom(D3_CFG_PATH)
+    state = game_state(game).expand(4, -1, -1)
 
     goal = [0.5, 0.5, 1]
     ammo = game.get_state().game_variables[0]
@@ -65,9 +62,6 @@ def d3_mode(args):
     measurement = [ammo, health, frag]
 
     trainer = Trainer(game, goal, measurement, args)
-
-    state = game_state(game).expand(4, -1, -1)
-
     trainer.train(state)
 
     game.close()
