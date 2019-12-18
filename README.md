@@ -1,6 +1,6 @@
 # vizdoom-project
 
-Installing vizdoom:
+### Installing vizdoom:
 * ZDoom dependencies
   * Linux
   ```bash
@@ -17,3 +17,15 @@ Installing vizdoom:
   sudo pip3 install vizdoom
   ```
 More details [here](https://github.com/mwydmuch/ViZDoom/blob/master/doc/Building.md)
+
+### Program launch
+ ```bash
+ python3 main.py
+ ```
+ 
+### Program options
+* --game-mode (defauld: "D1") - one of three game modes: D1, D2, D3
+* --batch-size (defauld: 64) - batch size
+* --iterations (defauld: 800) - number of training iterations per epoch
+* --epochs (defauld: 10) - number of epochs
+* --test-episodes (defauld: 8) - number of test episodes
