@@ -14,9 +14,9 @@ def game_state(game):
     return preprocess(game.get_state().screen_buffer)
 
     
-def save_model(model):
+def save_model(model, args):
     if not os.path.isdir("./saved_models/"):
             os.mkdir("./saved_models/")
 
-    model_path = "./saved_models/model-doom_{}.pth".format(self.args.game_mode)
+    model_path = "./saved_models/model-doom_{}.pth".format(args.game_mode)
     torch.save(model, model_path)

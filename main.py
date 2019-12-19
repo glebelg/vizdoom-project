@@ -71,9 +71,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--game-mode", default="D1", type=str)
     parser.add_argument("--batch-size", default=64, type=int)
-    parser.add_argument("--iterations", default=8000, type=int)
+    parser.add_argument("--iterations", default=4000, type=int)
     parser.add_argument("--epochs", default=10, type=int)
-    parser.add_argument("--test-episodes", default=80, type=int)
+    parser.add_argument("--test-episodes", default=40, type=int)
     args = parser.parse_args()
 
 

@@ -242,7 +242,7 @@ class Trainer:
             print("Testing...")
             self.test()
             
-            # save_model(self.model)
+            save_model(self.model, self.args)
 
 
     def watch_test_episodes(self):
