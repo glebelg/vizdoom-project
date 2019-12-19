@@ -34,8 +34,6 @@ def d1_mode(args):
 
     game.close()
 
-    # trainer.watch_test_episodes()
-
 
 def d2_mode(args):
     game = initialize_vizdoom(D2_CFG_PATH)
@@ -71,9 +69,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--game-mode", default="D1", type=str)
     parser.add_argument("--batch-size", default=64, type=int)
-    parser.add_argument("--iterations", default=4000, type=int)
-    parser.add_argument("--epochs", default=10, type=int)
-    parser.add_argument("--test-episodes", default=40, type=int)
+    parser.add_argument("--iterations", default=1000, type=int)
+    parser.add_argument("--epochs", default=5, type=int)
+    parser.add_argument("--test-episodes", default=20, type=int)
     args = parser.parse_args()
 
 
@@ -91,6 +89,7 @@ def main():
 
     graphs_drawer.draw_loss()
     graphs_drawer.draw_train_total_reward()
+    graphs_drawer.draw_train_average_total_reward()
     graphs_drawer.draw_test_total_reward()
     graphs_drawer.draw_finished_episodes()
     graphs_drawer.draw_episode_loss()

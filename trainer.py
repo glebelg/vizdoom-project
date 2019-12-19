@@ -205,6 +205,7 @@ class Trainer:
             self.game.new_episode()
             cut_step = 0
 
+            total_reward = []
             health = [self.game.get_state().game_variables[int(self.args.game_mode == "D3")]]
             if self.args.game_mode == "D3":
                 frags = [self.game.get_state().game_variables[2]]
@@ -229,11 +230,14 @@ class Trainer:
                     if self.args.game_mode == "D3":
                         frags.append(self.measurement[2].item())
 
+                    total_reward.append(self.game.get_total_reward())
+
                     self.game.new_episode()
                     episodes_finished += 1
                     health = []
                     cut_step = 0
                     
+            self.logsKeeper.save_val(np.array(total_reward).mean(), "train_average_total_reward.log")
             self.logsKeeper.save_val(episodes_finished, "train_episodes_finished.log")
             if self.args.game_mode == "D3":
                 self.logsKeeper.save_val(np.array(frags).mean(), "train_average_frags.log")
@@ -246,7 +250,7 @@ class Trainer:
 
 
     def watch_test_episodes(self):
-        self.game.set_window_visible(False)
+        self.game.set_window_visible(True)
         self.game.set_mode(Mode.ASYNC_PLAYER)
         self.game.init()
         for episode in range(1):

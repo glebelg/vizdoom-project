@@ -40,6 +40,20 @@ class GraphsDrawer:
         f.close()
 
 
+    def draw_train_average_total_reward(self):
+        f = open(self.logs_path + "train_average_total_reward.log")
+        data = np.array(f.read().splitlines()).astype(float)
+
+        plt.plot(range(len(data)), data)
+        plt.title("Average total reward per train epoch")
+        plt.xlabel("Epoch")
+        plt.ylabel("Total reward")
+        plt.savefig("./graphs/{}-train_average_total_reward.png".format(self.args.game_mode))
+
+        plt.close()
+        f.close()
+
+
     def draw_test_total_reward(self):
         f = open(self.logs_path + "test_total_reward.log")
         data = np.array(f.read().splitlines()).astype(float)
