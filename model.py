@@ -67,8 +67,10 @@ class GoalModule(nn.Module):
     
 
 class ExpectationBlock(nn.Module):
-    def __init__(self):
+    def __init__(self, action_size):
         super(ExpectationBlock, self).__init__()
+
+        self.action_size = action_size
 
         self.features = nn.Sequential(
             nn.Linear(512 + 128 + 128, 512),
@@ -80,21 +82,21 @@ class ExpectationBlock(nn.Module):
         
     def forward(self, x):
         batch_size = x.shape[0]
-        out = self.features(x).expand(8, -1, -1).contiguous().view(batch_size, -1).squeeze()
+        out = self.features(x).expand(self.action_size, -1, -1).contiguous().view(batch_size, -1).squeeze()
         return out
     
 
 class ActionBlock(nn.Module):
-    def __init__(self):
+    def __init__(self, action_size):
         super(ActionBlock, self).__init__()
 
         self.features = nn.Sequential(
             nn.Linear(512 + 128 + 128, 512),
             nn.LeakyReLU(0.2),
 
-            nn.Linear(512, 3 * 6 * 8),
+            nn.Linear(512, 3 * 6 * action_size),
             nn.LeakyReLU(0.2),
-            nn.LayerNorm(3 * 6 * 8)
+            nn.LayerNorm(3 * 6 * action_size)
         )
         
     def forward(self, x):
@@ -103,15 +105,15 @@ class ActionBlock(nn.Module):
     
     
 class Model(nn.Module):
-    def __init__(self):
+    def __init__(self, action_size):
         super(Model, self).__init__()
 
         self.perception_module = PerceptionModule()
         self.measurement_module = MeasurementModule()
         self.goal_module = GoalModule()
         
-        self.expectation_block = ExpectationBlock()
-        self.action_block = ActionBlock()
+        self.expectation_block = ExpectationBlock(action_size)
+        self.action_block = ActionBlock(action_size)
         
     def forward(self, s, m, g):
         perception_out = self.perception_module(s)
