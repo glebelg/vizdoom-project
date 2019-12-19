@@ -34,7 +34,7 @@ class Trainer:
         measurement = np.divide(measurement, [7.5, 30., 1.])
         self.measurement = torch.from_numpy(measurement).to(self.device)
 
-        self.model = Model().to(self.device)
+        self.model = Model(len(self.actions)).to(self.device)
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4, betas=(0.95, 0.999), eps=1e-4)
 
@@ -57,9 +57,9 @@ class Trainer:
         rand_indices = np.random.choice(self.memory.size - (self.timesteps[-1] + 1), batch_size)
 
         state_input = torch.zeros(batch_size, 4, 84, 84).to(self.device)
-        measurement_input = torch.zeros(batch_size, 3).to(self.device)
+        measurement_input = torch.zeros(batch_size, len(self.measurement)).to(self.device)
         goal_input = self.goal.expand(batch_size, -1).to(self.device)
-        f_action_target = torch.zeros(batch_size, 3 * 6).to(self.device)
+        f_action_target = torch.zeros(batch_size, len(self.measurement) * len(self.timesteps)).to(self.device)
         
         action = []
         self.memory_batch = self.memory.get_sample(self.memory.size)
@@ -69,7 +69,7 @@ class Trainer:
             last_offset = 0
             done = False
             for j in range(self.timesteps[-1] + 1):
-                if not self.memory_batch[4][idx + j]: # if episode is not finished
+                if not self.memory_batch[4][idx + j]:
                     if j in self.timesteps:
                         if not done:
                             future_measurements += list((self.memory_batch[3][idx + j] - self.memory_batch[3][idx]))
@@ -190,10 +190,10 @@ class Trainer:
             if self.args.game_mode == "D3":
                 frags.append(frag)
 
-        self.logsKeeper.save_val(np.array(total_reward).mean(), "test_total_reward")
-        self.logsKeeper.save_val(np.array(health).mean(), "test_average_health")
+        self.logsKeeper.save_val(np.array(total_reward).mean(), "test_total_reward.log")
+        self.logsKeeper.save_val(np.array(health).mean(), "test_average_health.log")
         if self.args.game_mode == "D3":
-            self.logsKeeper.save_val(np.array(frags).mean(), "test_frags")
+            self.logsKeeper.save_val(np.array(frags).mean(), "test_frags.log")
 
 
     def train(self, state):
@@ -215,15 +215,16 @@ class Trainer:
 
                 health.append(self.measurement[1].item() * 30)
 
-                self.logsKeeper.save_measurement(self.measurement, "train_measurement")
+                self.logsKeeper.save_measurement(self.measurement, "train_measurement.log")
                 if loss is not None:
-                    self.logsKeeper.save_val(loss, "train_loss")
+                    self.logsKeeper.save_val(loss, "train_loss.log")
                 
                 if self.game.is_episode_finished() or cut_step == STOP_EPISODE:
-                    self.logsKeeper.save_val(self.game.get_total_reward(), "train_total_reward")
-                    self.logsKeeper.save_val(loss, "train_episode_loss")
-                    self.logsKeeper.save_val(self.measurement[2].item(), "train_frags")
-                    self.logsKeeper.save_val(np.array(health).mean(), "train_average_health")
+                    self.logsKeeper.save_val(self.game.get_total_reward(), "train_total_reward.log")
+                    self.logsKeeper.save_val(self.measurement[2].item(), "train_frags.log")
+                    self.logsKeeper.save_val(np.array(health).mean(), "train_average_health.log")
+                    if loss is not None:
+                        self.logsKeeper.save_val(loss, "train_episode_loss.log")
 
                     if self.args.game_mode == "D3":
                         frags.append(self.measurement[2].item())
@@ -233,9 +234,9 @@ class Trainer:
                     health = []
                     cut_step = 0
                     
-            self.logsKeeper.save_val(episodes_finished, "train_episodes_finished")
+            self.logsKeeper.save_val(episodes_finished, "train_episodes_finished.log")
             if self.args.game_mode == "D3":
-                self.logsKeeper.save_val(np.array(frags).mean(), "train_average_frags")
+                self.logsKeeper.save_val(np.array(frags).mean(), "train_average_frags.log")
 
             print("Completed {} episodes".format(episodes_finished))
             print("Testing...")
