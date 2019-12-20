@@ -23,9 +23,14 @@ More details [here](https://github.com/mwydmuch/ViZDoom/blob/master/doc/Building
  python3 main.py
  ```
  
-### Program options
+##### Program options
 * --game-mode (defauld: "D1") - one of three game modes: D1, D2, D3
 * --batch-size (defauld: 64) - batch size
-* --iterations (defauld: 800) - number of training iterations per epoch
-* --epochs (defauld: 10) - number of epochs
-* --test-episodes (defauld: 8) - number of test episodes
+* --iterations (defauld: 1000) - number of training iterations per epoch
+* --epochs (defauld: 5) - number of epochs
+* --test-episodes (defauld: 20) - number of test episodes
+
+You can also use makefile, which launches all game modes with default parameters:
+```bash
+ make
+ ```
