@@ -144,7 +144,7 @@ class GraphsDrawer:
 
         plt.plot(range(len(data)), data)
         plt.title("Average number of frags per train epoch")
-        plt.xlabel("Episode")
+        plt.xlabel("Epoch")
         plt.ylabel("Frags")
         plt.savefig("./graphs/{}-train_average_frags.png".format(self.args.game_mode))
 
