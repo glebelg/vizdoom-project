@@ -9,7 +9,7 @@ from utils import game_state
 from main import initialize_vizdoom
 
 
-D2_CFG_PATH = "./scenarios/health_gathering_supreme.cfg"
+D2_CFG_PATH = "../scenarios/health_gathering_supreme.cfg"
 
 device = torch.device("cpu")
 
@@ -63,7 +63,7 @@ measurement = [0, health, 0]
 measurement = np.divide(measurement, [7.5, 30., 1.]).astype(np.float32)
 measurement = torch.FloatTensor(torch.from_numpy(measurement).to(device))
 
-model = torch.load("./saved_models/model-doom_D1.pth",  map_location=torch.device('cpu'))
+model = torch.load("../saved_models/model-doom_D1.pth",  map_location=torch.device('cpu'))
 
 game.close()
 
