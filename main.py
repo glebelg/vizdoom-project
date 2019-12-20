@@ -88,16 +88,16 @@ def main():
     graphs_drawer = GraphsDrawer(args)
 
     graphs_drawer.draw_loss()
-    graphs_drawer.draw_train_total_reward()
-    graphs_drawer.draw_train_average_total_reward()
+    # graphs_drawer.draw_train_total_reward()
+    # graphs_drawer.draw_train_average_total_reward()
     graphs_drawer.draw_test_total_reward()
     graphs_drawer.draw_finished_episodes()
-    graphs_drawer.draw_episode_loss()
-    graphs_drawer.draw_train_average_health()
+    # graphs_drawer.draw_episode_loss()
+    # graphs_drawer.draw_train_average_health()
     graphs_drawer.draw_test_average_health()
     if args.game_mode == "D3":
-        graphs_drawer.draw_train_frags()
-        graphs_drawer.draw_train_average_frags()
+        # graphs_drawer.draw_train_frags()
+        # graphs_drawer.draw_train_average_frags()
         graphs_drawer.draw_test_frags()
 
 
